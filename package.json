@@ -1,0 +1,70 @@
+{
+  "name": "bs-plc",
+  "displayName": "BS PLC",
+  "description": "Balt System PLC editor helper",
+  "version": "0.1.0",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "bs-plc.showUsed",
+        "title": "Show Used Meta Operands",
+        "category": "BS PLC"
+      }
+    ],
+    "configurationDefaults": {
+      "[bsplc]": {
+        "files.encoding": "cp866"
+      }
+    },
+    "languages": [
+      {
+        "id": "bsplc",
+        "aliases": [
+          "Balt System PLC"
+        ],
+        "firstLine": "^\\s*;\\s*bs\\s*plc.*",
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "bsplc",
+        "scopeName": "source.bsplc",
+        "path": "./syntaxes/bsplc.tmLanguage.json"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "webpack",
+    "watch": "webpack --watch",
+    "package": "webpack --mode production --devtool hidden-source-map",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.6",
+    "@types/node": "18.x",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^6.15.0",
+    "@typescript-eslint/parser": "^6.15.0",
+    "@vscode/test-cli": "^0.0.4",
+    "@vscode/test-electron": "^2.3.8",
+    "eslint": "^8.56.0",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.3.3",
+    "webpack": "^5.90.0",
+    "webpack-cli": "^5.1.4"
+  }
+}

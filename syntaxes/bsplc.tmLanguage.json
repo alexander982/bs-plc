@@ -1,0 +1,61 @@
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "name": "bsplc",
+    "scopeName": "source.bsplc",
+    "patterns": [
+        {"include": "#comments"},
+        {"include": "#keywords"},
+        {"include": "#variables"},
+        {"include": "#constants"}
+    ],
+    "repository": {
+        "comments":{
+            "patterns": [
+                {
+                    "name": "comment.bsplc",
+                    "match": "\\s*;.*"
+                }
+            ]
+        },
+        "keywords":{
+            "patterns": [
+                {
+                    "name": "keyword.control.bsplc",
+                    "match": "\\b(?i)(DOF|DOE|ENDF|ENDE)\\b"
+                },
+                {
+                    "name": "support.class.bsplc",
+                    "match": "(?i)(ENC|DEC|BCD|BIN|ABS|SGN|MUX|HIG|LOW|XCH)"
+                }
+            ]
+        },
+        "variables":{
+            "patterns": [
+                {
+                    "name": "variable.name.bsplc",
+                    "match": "!{1}[a-zA-Z0-9@#.'?]+"
+                },
+                {
+                    "name": "support.type.bsplc",
+                    "match": "[WIU]{1}\\d{1,3}[KNT]{1}\\d{1,3}"
+                },
+                {
+                    "name": "variable.language.bsplc",
+                    "match": "[IU]{1}\\d{1,3}A\\d{1,3}"
+                },
+                {
+                    "name": "support.function.bsplc",
+                    "match": "(T\\d{1,2}[IAUD]{1})|(C\\d{1,2}[IRZAW]{1})|(P\\d{1,2})"
+                }
+            ]
+        },
+        "constants":{
+            "patterns": [
+                {
+                    "name": "constant.numeric",
+                    "match": "[0-9]{1,3}[DOH]{0,1}"
+                }
+            ]
+        }
+    }
+}
