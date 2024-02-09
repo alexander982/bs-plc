@@ -1,0 +1,21 @@
+table {
+    table-layout: fixed;
+}
+
+table,
+th {
+    border: 1px solid gray;
+    border-collapse: collapse;
+}
+
+th {
+    padding: 8px;
+}
+
+tr:nth-child(1) th {
+    border: 2px solid white;
+}
+
+th:nth-child(1) {
+    border: 2px solid white;
+}

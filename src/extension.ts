@@ -18,7 +18,7 @@ export function activate(context: vscode.ExtensionContext) {
 		} else {
 			crPanel = vscode.window.createWebviewPanel(
 				'crossReference',
-				'Used Symbols',
+				'Used T, C, R Symbols',
 				columnToShowIn || vscode.ViewColumn.One,
 				{
 					enableScripts: true,
@@ -26,7 +26,7 @@ export function activate(context: vscode.ExtensionContext) {
 				}
 			);
 		}
-		crPanel.webview.html = getWebviewContent();
+		crPanel.webview.html = getWebviewContent(crPanel.webview, context.extensionUri);
 		plc = vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document : undefined;
 		let plcData = parseDocument(plc);
 		plcData.then(function(result){
@@ -154,88 +154,29 @@ class BSDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
 // This method is called when your extension is deactivated
 export function deactivate() {}
 
-function getWebviewContent(): string {
+function getWebviewContent(webview:vscode.Webview, extensionUri:vscode.Uri): string {
+	// local path to script
+	const scriptPathOnDisk = vscode.Uri.joinPath(extensionUri, 'media', 'main.js');
+	const scriptPath = webview.asWebviewUri(scriptPathOnDisk);
+	// local path to style
+	const stylePathOnDisk = vscode.Uri.joinPath(extensionUri, 'media', 'style.css');
+	const stylePath = webview.asWebviewUri(stylePathOnDisk);
 	return `<!DOCTYPE html>
 	<html lang="en">
 	
 	<head>
 		<meta charset="UTF-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<title>Used Symbols</title>
-		<style>
-			table {
-				table-layout: fixed;
-			}
-	
-			table,
-			th {
-				border: 1px solid gray;
-				border-collapse: collapse;
-			}
-	
-			th {
-				padding: 8px;
-			}
-	
-			tr:nth-child(1) th {
-				border: 2px solid white;
-			}
-	
-			th:nth-child(1) {
-				border: 2px solid white;
-			}
-		</style>
+		<title>Used T,C,P operators</title>
+		<link href="${stylePath}" rel="stylesheet">
 	</head>
 	
 	<body>
-		<h1>Cross Reference</h1>
+		<h1>Used T,C,P operators</h1>
 		<div id="timers"></div>
 		<div id="counters"></div>
 		<div id="pulses"></div>
-		<script>
-			console.log("webview script loaded");
-	
-			function renderTable(data){
-				console.log('render table', data);
-				let table = '<table>';
-				// header
-				table += '<tr><th>N</th><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th></tr>'
-				for (let r = 0; r < 10; r++) {
-					//rows
-					table += '<tr><th>' + r + '</th>';
-					for (let c = 0; c < 10; c++) {
-						// columns
-						if (data.includes((r * 10 + c))) {
-							table += '<th>X</th>';
-						} else {
-							table += '<th></th>';
-						}
-					}
-					table += '</tr>';
-				}
-				table += '</table>';
-				return table;
-			}
-	
-			function renderData(e) {
-				const data = e.data;
-				console.log("data received ", data);
-				const timer = document.getElementById("timers");
-				let tableStr = '<h2>Timers</h2>';
-				if (data.timers) {tableStr += renderTable(data.timers);}
-				timer.innerHTML = tableStr;
-				const counter = document.getElementById("counters");
-				tableStr = '<h2>Counters</h2>';
-				if (data.counters) {tableStr += renderTable(data.counters);}
-				counter.innerHTML = tableStr;
-				const pulses = document.getElementById("pulses");
-				tableStr = '<h2>Pulses</h2>';
-				if (data.pulses) {tableStr += renderTable(data.pulses);}
-				pulses.innerHTML = tableStr;
-			}
-	
-			window.addEventListener('message', renderData);
-		</script>
+		<script src="${scriptPath}"></script>
 	</body>
 	
 	</html>`;
