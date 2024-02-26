@@ -2,6 +2,8 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 
+var prjFiles: Array<String>;
+
 // This method is called when your extension is activated
 export function activate(context: vscode.ExtensionContext) {
 	let crPanel: vscode.WebviewPanel | undefined = undefined;
@@ -48,6 +50,10 @@ export function activate(context: vscode.ExtensionContext) {
 	console.log("register symbol provider");
 	let dsp = vscode.languages.registerDocumentSymbolProvider({ language: "bsplc" }, new BSDocumentSymbolProvider());
 
+	console.log('searching for project file');
+	readProjectFile();
+	setTimeout(() => {console.log(`check global var prjFiles: ${prjFiles}`);},2000);
+	
 	// on document save
 	let ce = vscode.workspace.onDidSaveTextDocument((doc) => {
 		if (doc && plc && doc.fileName === plc.fileName) {
@@ -72,6 +78,23 @@ type BSSymbolsInfo = {
 	pulses?:Array<number>,
 	signals?:Array<string>
 };
+
+function readProjectFile() {
+	vscode.workspace.findFiles('bsplc.json').then((files) => {
+		if (files.length > 0) {
+			console.log(`project file: ${files}`);
+			let file = vscode.workspace.fs.readFile(files[0]);
+			file.then((data) => {
+				const buf = Buffer.from(data);
+				const prj = JSON.parse(buf.toString());
+				if (prj.files) {
+					console.log(`project files: ${prj.files}`);
+					prjFiles = prj.files;
+				}
+			});
+		}
+	});
+}
 
 async function parseDocument(doc:vscode.TextDocument | undefined) {
 	if (!doc) {return undefined;}
