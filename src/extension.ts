@@ -125,7 +125,7 @@ async function parseDocument(doc:vscode.TextDocument | undefined) {
 				// Timers
 				if (!result.timers) {result.timers = [];}
 				let t = 0;
-				m = line.text.trim().match(/^T(\d{1,2})I/);
+				m = line.text.trim().match(/^T(\d{1,3})I/);
 				if (m) {
 					t = Number.parseInt(m[1]);
 					// console.log("timer ", t , m.input? m.input: "");
