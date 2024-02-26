@@ -54,6 +54,9 @@ export function activate(context: vscode.ExtensionContext) {
 	readProjectFile();
 	setTimeout(() => {console.log(`check global var prjFiles: ${prjFiles}`);},2000);
 	
+	console.log('register hover provider');
+	let hp = vscode.languages.registerHoverProvider({language: 'bsplc'}, new BSHoverProvider());
+
 	// on document save
 	let ce = vscode.workspace.onDidSaveTextDocument((doc) => {
 		if (doc && plc && doc.fileName === plc.fileName) {
@@ -70,6 +73,7 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(scrCmd);
 	context.subscriptions.push(dsp);
 	context.subscriptions.push(ce);
+	context.subscriptions.push(hp);
 }
 
 type BSSymbolsInfo = {
@@ -170,6 +174,16 @@ class BSDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
 			} else {
 				resolve(symbols);
 			}
+		});
+	}
+}
+
+class BSHoverProvider implements vscode.HoverProvider {
+	provideHover(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): vscode.ProviderResult<vscode.Hover> {
+		return new Promise((resolve, reject) => {
+			resolve(new vscode.Hover(
+				new vscode.MarkdownString(`document ${document.fileName}, position ${position.line}:${position.character}`)
+			));
 		});
 	}
 }
