@@ -1,13 +1,18 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+import { BSProject } from './project';
 
-var prjFiles: Array<String>;
+var project: BSProject;
 
 // This method is called when your extension is activated
 export function activate(context: vscode.ExtensionContext) {
 	let crPanel: vscode.WebviewPanel | undefined = undefined;
 	let plc: vscode.TextDocument | undefined = undefined;
+	project = {
+		hasProjectFile: false,
+		hasAliases: false
+	};
 	// Use the console to output diagnostic information (console.log) and errors (console.error)
 	console.log('Congratulations, your extension "bs-plc" is now active!');
 
@@ -52,7 +57,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	console.log('searching for project file');
 	readProjectFile();
-	setTimeout(() => {console.log(`check global var prjFiles: ${prjFiles}`);},2000);
+	setTimeout(() => {console.log(`check global var prjFiles: ${project.files}`);},2000);
 	
 	console.log('register hover provider');
 	let hp = vscode.languages.registerHoverProvider({language: 'bsplc'}, new BSHoverProvider());
@@ -87,13 +92,20 @@ function readProjectFile() {
 	vscode.workspace.findFiles('bsplc.json').then((files) => {
 		if (files.length > 0) {
 			console.log(`project file: ${files}`);
+			project.hasProjectFile = true;
 			let file = vscode.workspace.fs.readFile(files[0]);
 			file.then((data) => {
 				const buf = Buffer.from(data);
-				const prj = JSON.parse(buf.toString());
+				let prj: {files: Array<string>};
+				try {
+					prj = JSON.parse(buf.toString());
+				} catch (error) {
+					console.error(error);
+					return;
+				}
 				if (prj.files) {
-					console.log(`project files: ${prj.files}`);
-					prjFiles = prj.files;
+					console.log(`project files: ${project.files}`);
+					project.files = prj.files;
 				}
 			});
 		}
