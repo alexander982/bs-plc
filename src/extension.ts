@@ -13,6 +13,9 @@ export function activate(context: vscode.ExtensionContext) {
 		hasProjectFile: false,
 		hasAliases: false
 	};
+	console.log('searching for project file');
+	readProjectFile();
+	setTimeout(() => {console.log(`check global var prjFiles: ${project.files}`);},2000);
 	// Use the console to output diagnostic information (console.log) and errors (console.error)
 	console.log('Congratulations, your extension "bs-plc" is now active!');
 
@@ -54,10 +57,6 @@ export function activate(context: vscode.ExtensionContext) {
 	});
 	console.log("register symbol provider");
 	let dsp = vscode.languages.registerDocumentSymbolProvider({ language: "bsplc" }, new BSDocumentSymbolProvider());
-
-	console.log('searching for project file');
-	readProjectFile();
-	setTimeout(() => {console.log(`check global var prjFiles: ${project.files}`);},2000);
 	
 	console.log('register hover provider');
 	let hp = vscode.languages.registerHoverProvider({language: 'bsplc'}, new BSHoverProvider());
