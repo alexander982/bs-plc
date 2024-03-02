@@ -18,6 +18,12 @@ export function activate(context: vscode.ExtensionContext) {
 	// Use the console to output diagnostic information (console.log) and errors (console.error)
 	console.log('Congratulations, your extension "bs-plc" is now active!');
 
+	let folders =vscode.workspace.workspaceFolders;
+	if (folders) {
+		// FIXME: if is there more than one folder?
+		project.folder = folders[0].uri;
+	}
+
 	// The command has been defined in the package.json file
 	let scrCmd = vscode.commands.registerCommand('bs-plc.showUsed', () => {
 		const columnToShowIn = vscode.window.activeTextEditor

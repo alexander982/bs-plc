@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 
 export type BSProject = {
+    folder?: vscode.Uri
     files?: Array<string>,
     hasProjectFile: boolean,
     hasAliases: boolean,
