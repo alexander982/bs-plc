@@ -43,15 +43,17 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 		crPanel.webview.html = getWebviewContent(crPanel.webview, context.extensionUri);
 		plc = vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document : undefined;
-		let plcData = parseDocument(plc);
-		plcData.then(function(result){
-			console.log("result ", result);
-			if (crPanel) {
-				console.log('post message');
-				crPanel.webview.postMessage(result);
-			}
-			return null;
-		});
+		if (plc) {
+			let plcData = parseDocument(plc);
+			plcData.then(function(result){
+				console.log("result ", result);
+				if (crPanel) {
+					console.log('post message');
+					crPanel.webview.postMessage(result);
+				}
+				return null;
+			});
+		}
 		// crPanel.webview.postMessage({});
 
 		vscode.window.showInformationMessage('There is no cross reference yet');
@@ -111,8 +113,7 @@ async function readProjectFile() {
 	}
 }
 
-async function parseDocument(doc:vscode.TextDocument | undefined) {
-	if (!doc) {return undefined;}
+async function parseDocument(doc:vscode.TextDocument) {
 	let result: BSSymbolsInfo = {};
 	for (let i = 0; i < doc.lineCount; i++){
 		let line = doc.lineAt(i);
@@ -159,6 +160,15 @@ async function parseDocument(doc:vscode.TextDocument | undefined) {
 		}
 	}
 	return result;
+}
+
+async function parseDocuments() {
+	if (project.hasProjectFile) {
+		// TODO: parse documents
+	} else if (vscode.window.activeTextEditor) {
+		let doc = vscode.window.activeTextEditor.document;
+		await parseDocument(doc);
+	}
 }
 
 class BSDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
