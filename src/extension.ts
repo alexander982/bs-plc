@@ -113,20 +113,28 @@ async function readProjectFile() {
 	}
 }
 
-async function parseDocument(doc:vscode.TextDocument) {
+
+
+async function parseDocument(doc:vscode.TextDocument | string) {
+	let lines: Array<string>;
+	if (typeof doc === 'string') {
+		lines = doc.split('\n');
+	} else {
+		lines = doc.getText().split('\n');
+	}
 	let result: BSSymbolsInfo = {};
-	for (let i = 0; i < doc.lineCount; i++){
-		let line = doc.lineAt(i);
+	for (let i = 0; i < lines.length; i++){
+		let line = lines[i].trim();
 		//skip comments
-		if (line.text.trim().startsWith(";")) {continue;}
+		if (line.startsWith(";")) {continue;}
 		let m: RegExpMatchArray | null;
-		switch (line.text.charAt(0).toUpperCase()) {
+		switch (line.charAt(0).toUpperCase()) {
 			case 'C':
 				// Counters
 				if (!result.counters) {result.counters = [];}
 				let c = 0;
 				// result.counters.push();
-				m = line.text.trim().match(/^C(\d{1,2})I/);
+				m = line.match(/^C(\d{1,2})I/);
 				if (m) {
 					c = Number.parseInt(m[1]);
 					// console.log("counter ", c , m.input? m.input: "");
@@ -137,7 +145,7 @@ async function parseDocument(doc:vscode.TextDocument) {
 				// Timers
 				if (!result.timers) {result.timers = [];}
 				let t = 0;
-				m = line.text.trim().match(/^T(\d{1,3})I/);
+				m = line.match(/^T(\d{1,3})I/);
 				if (m) {
 					t = Number.parseInt(m[1]);
 					// console.log("timer ", t , m.input? m.input: "");
@@ -148,7 +156,7 @@ async function parseDocument(doc:vscode.TextDocument) {
 				// Pulses
 				if (!result.pulses) {result.pulses = [];}
 				let p =0;
-				m = line.text.trim().match(/^P(\d{1,2})/);
+				m = line.match(/^P(\d{1,2})/);
 				if (m) {
 					p = Number.parseInt(m[1]);
 					// console.log("pulse ", p , m.input? m.input: "");
