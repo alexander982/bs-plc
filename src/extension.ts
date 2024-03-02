@@ -14,8 +14,7 @@ export function activate(context: vscode.ExtensionContext) {
 		hasAliases: false
 	};
 	console.log('searching for project file');
-	readProjectFile();
-	setTimeout(() => {console.log(`check global var prjFiles: ${project.files}`);},2000);
+	readProjectFile().then(() => console.log(`check global var prjFiles: ${project.files}`));
 	// Use the console to output diagnostic information (console.log) and errors (console.error)
 	console.log('Congratulations, your extension "bs-plc" is now active!');
 
@@ -87,28 +86,23 @@ type BSSymbolsInfo = {
 	signals?:Array<string>
 };
 
-function readProjectFile() {
-	vscode.workspace.findFiles('bsplc.json').then((files) => {
-		if (files.length > 0) {
-			console.log(`project file: ${files}`);
-			project.hasProjectFile = true;
-			let file = vscode.workspace.fs.readFile(files[0]);
-			file.then((data) => {
-				const buf = Buffer.from(data);
-				let prj: {files: Array<string>};
-				try {
-					prj = JSON.parse(buf.toString());
-				} catch (error) {
-					console.error(error);
-					return;
-				}
-				if (prj.files) {
-					console.log(`project files: ${project.files}`);
-					project.files = prj.files;
-				}
-			});
+async function readProjectFile() {
+	let files = await vscode.workspace.findFiles('bsplc.json');
+	if (!(files.length > 0)) {
+		vscode.window.showInformationMessage('Project file now found. Single file mode');
+		return;
+	}
+	let file = await vscode.workspace.fs.readFile(files[0]);
+	const buf = Buffer.from(file);
+	let prj: {files: Array<string>};
+	try {
+		prj = JSON.parse(buf.toString());
+		if (prj.files) {
+			project.files = prj.files;
 		}
-	});
+	} catch (error) {
+		console.error(error);
+	}
 }
 
 async function parseDocument(doc:vscode.TextDocument | undefined) {
