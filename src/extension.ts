@@ -3,6 +3,8 @@
 import * as vscode from 'vscode';
 import { BSProject } from './project';
 
+const DELIMITERS = [' ', '=', '/', '(', ')', '[', ']', '+', '-', '*', '&', '<', '>', '"', ',', ':'];
+
 var project: BSProject;
 
 // This method is called when your extension is activated
@@ -113,7 +115,14 @@ async function readProjectFile() {
 	}
 }
 
-
+function parseComment(line: string) {
+	let s = line.match( /^;\s*(T\d{1,3}I?|C\d{1,2}I?|P\d{1,2}|[IUW]\d{1,3}[AKNT]\d{1,2}|[!][a-zA-Z0-9@#.'?]+)\s*-(.+)/ );
+	if (s && !s[1].startsWith('!')) {
+		console.log(s[1], '-', s[2]);
+		if (!project.hoverMap) {project.hoverMap = new Map<string, string>();}
+		project.hoverMap.set(s[1], s[2]);
+	};
+}
 
 async function parseDocument(doc:vscode.TextDocument | string) {
 	let lines: Array<string>;
@@ -125,8 +134,8 @@ async function parseDocument(doc:vscode.TextDocument | string) {
 	let result: BSSymbolsInfo = {};
 	for (let i = 0; i < lines.length; i++){
 		let line = lines[i].trim();
-		//skip comments
-		if (line.startsWith(";")) {continue;}
+		
+		if (line.startsWith(";")) {parseComment(line);}
 		let m: RegExpMatchArray | null;
 		switch (line.charAt(0).toUpperCase()) {
 			case 'C':
@@ -207,12 +216,47 @@ class BSDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
 	}
 }
 
+function getToken(line: string, position: number) {
+	let start = position;
+	let end = position;
+	for (let i = position; i >= 0; i--) {
+		if (DELIMITERS.includes(line.charAt(i))) {
+			break;
+		} else {
+			start = i;
+		}
+	}
+	for (let j = position; j < line.length; j++) {
+		if (DELIMITERS.includes(line.charAt(j))) {
+			break;
+		} else {
+			end = j + 1;
+		}
+	}
+	return line.substring(start, end);
+}
+
 class BSHoverProvider implements vscode.HoverProvider {
 	provideHover(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): vscode.ProviderResult<vscode.Hover> {
 		return new Promise((resolve, reject) => {
-			resolve(new vscode.Hover(
-				new vscode.MarkdownString(`document ${document.fileName}, position ${position.line}:${position.character}`)
-			));
+			let line = document.lineAt(position.line);
+			if (line.isEmptyOrWhitespace) {
+				resolve(null);
+			} else if (line.text.charAt(line.firstNonWhitespaceCharacterIndex) === ';') {
+				resolve(null);
+			} else if (DELIMITERS.includes(line.text.charAt(position.character))) {
+				resolve(null);
+			} else {
+				let t = getToken(line.text, position.character);
+				let description = '';
+				if (project.hoverMap){
+					let d = project.hoverMap.get(t);
+					if (d) { description = ` - ${d}`;}
+				}
+				resolve(new vscode.Hover(
+					new vscode.MarkdownString(`${t}${description}`)
+				));
+			}
 		});
 	}
 }
