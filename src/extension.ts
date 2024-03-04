@@ -93,7 +93,7 @@ function getMOPs(): BSSymbolsInfo {
 }
 
 function mergeTimers() {
-	if (project.mops && project.mops.keys.length > 0) {
+	if (project.mops && project.mops.size > 0) {
 		let t = new Array<number>();
 		for (let val of project.mops.values()) {
 			if (val.timers) {
@@ -106,27 +106,27 @@ function mergeTimers() {
 }
 
 function mergeCounters() {
-	if (project.mops && project.mops.keys.length > 0) {
-		let t = new Array<number>();
+	if (project.mops && project.mops.size > 0) {
+		let c = new Array<number>();
 		for (let val of project.mops.values()) {
 			if (val.counters) {
-				t = t.concat(val.counters);
+				c = c.concat(val.counters);
 			}
 		}
-		return t;
+		return c;
 	}
 	return [];
 }
 
 function mergePulses() {
-	if (project.mops && project.mops.keys.length > 0) {
-		let t = new Array<number>();
+	if (project.mops && project.mops.size > 0) {
+		let p = new Array<number>();
 		for (let val of project.mops.values()) {
 			if (val.pulses) {
-				t = t.concat(val.pulses);
+				p = p.concat(val.pulses);
 			}
 		}
-		return t;
+		return p;
 	}
 	return [];
 }
@@ -179,7 +179,10 @@ async function parseDocument(doc:vscode.TextDocument | string) {
 	for (let i = 0; i < lines.length; i++){
 		let line = lines[i].trim();
 		
-		if (line.startsWith(";")) {parseComment(line);}
+		if (line.startsWith(";")) {
+			parseComment(line);
+			continue;
+		}
 		let m: RegExpMatchArray | null;
 		switch (line.charAt(0).toUpperCase()) {
 			case 'C':
@@ -254,7 +257,7 @@ async function parseDocuments() {
 			if (i === 0 && text.charAt(0) === '*') {
 				console.log('aliases file found');
 				project.hasAliases = true;
-				parseAliases(text.split('\n'));
+				parseAliases(text.split(/\r?\n/));
 			} else {
 				if (!project.mops) { project.mops = new Map(); }
 				project.mops.set(uri.path, await parseDocument(text));
