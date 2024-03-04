@@ -116,7 +116,7 @@ async function readProjectFile() {
 }
 
 function parseComment(line: string) {
-	let s = line.match( /^;\s*(T\d{1,3}I?|C\d{1,2}I?|P\d{1,2}|[IUW]\d{1,3}[AKNT]\d{1,2}|[!][a-zA-Z0-9@#.'?]+)\s*-(.+)/ );
+	let s = line.match( /^;\s*(T\d{1,3}|C\d{1,2}|P\d{1,2}|[IUW]\d{1,3}[AKNT]\d{1,2}|[!][a-zA-Z0-9@#.'?]+).*-(.+)/ );
 	if (s && !s[1].startsWith('!')) {
 		console.log(s[1], '-', s[2]);
 		if (!project.hoverMap) {project.hoverMap = new Map<string, string>();}
@@ -179,12 +179,46 @@ async function parseDocument(doc:vscode.TextDocument | string) {
 	return result;
 }
 
+function parseAliases(lines: Array<string>) {
+	if (!project.aliasToSymbol) { project.aliasToSymbol = new Map<string, string>(); }
+	if (!project.symbolToAlias) { project.symbolToAlias = new Map<string, string>(); }
+	project.aliasToSymbol.clear();
+	project.symbolToAlias.clear();
+	for (let line of lines) {
+		if (line.startsWith('*')) {continue;}
+		let l = line.trim();
+		if (l.length > 0) {
+			let m = l.match(/\s*(.*)\s*=(.*)\s*/);
+			if (m) {
+				console.log(m[1], m[2]);
+				project.aliasToSymbol.set(m[1], m[2]);
+				project.symbolToAlias.set(m[2], m[3]);
+			}
+		}
+	}
+}
+
 async function parseDocuments() {
-	if (project.hasProjectFile) {
-		// TODO: parse documents
+	if (project.hasProjectFile && project.files && project.folder) {
+		for (let i = 0; i < project.files.length; i++) {
+			let uri = vscode.Uri.joinPath(project.folder, project.files[i]);
+			// check first file for aliases
+			let data = await vscode.workspace.fs.readFile(uri);
+			// FIXME: cp866 encoding!!!
+			let text = Buffer.from(data).toString("ascii");
+			if (i === 0 && text.charAt(0) === '*') {
+				console.log('aliases file found');
+				project.hasAliases = true;
+				parseAliases(text.split('\n'));
+			} else {
+				if (!project.mops) { project.mops = new Map(); }
+				project.mops.set(uri.path, await parseDocument(text));
+			}
+		}
 	} else if (vscode.window.activeTextEditor) {
 		let doc = vscode.window.activeTextEditor.document;
-		await parseDocument(doc);
+		if (!project.mops) { project.mops = new Map(); }
+		project.mops.set(doc.uri.path , await parseDocument(doc.getText()));
 	}
 }
 
