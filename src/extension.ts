@@ -247,8 +247,9 @@ async function parseDocuments() {
 			let uri = vscode.Uri.joinPath(project.folder, project.files[i]);
 			// check first file for aliases
 			let data = await vscode.workspace.fs.readFile(uri);
-			// FIXME: cp866 encoding!!!
-			let text = Buffer.from(data).toString("ascii");
+
+			let td = new TextDecoder('cp866');
+			let text = td.decode(Buffer.from(data));
 			if (i === 0 && text.charAt(0) === '*') {
 				console.log('aliases file found');
 				project.hasAliases = true;
