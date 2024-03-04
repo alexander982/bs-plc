@@ -151,6 +151,7 @@ async function readProjectFile() {
 		prj = JSON.parse(buf.toString());
 		if (prj.files) {
 			project.files = prj.files;
+			project.hasProjectFile = true;
 		}
 	} catch (error) {
 		console.error(error);
