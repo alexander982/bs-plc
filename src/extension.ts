@@ -169,10 +169,11 @@ function parseComment(line: string) {
 
 async function parseDocument(doc:vscode.TextDocument | string) {
 	let lines: Array<string>;
+	let reg = /\r?\n/;
 	if (typeof doc === 'string') {
-		lines = doc.split('\n');
+		lines = doc.split(reg);
 	} else {
-		lines = doc.getText().split('\n');
+		lines = doc.getText().split(reg);
 	}
 	let result: BSSymbolsInfo = {};
 	for (let i = 0; i < lines.length; i++){
