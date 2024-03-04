@@ -231,11 +231,11 @@ function parseAliases(lines: Array<string>) {
 		if (line.startsWith('*')) {continue;}
 		let l = line.trim();
 		if (l.length > 0) {
-			let m = l.match(/\s*(.*)\s*=(.*)\s*/);
+			let m = l.match(/\s*([a-zA-Z0-9@#.'?]+)\s*=(.*)\s*/);
 			if (m) {
 				console.log(m[1], m[2]);
 				project.aliasToSymbol.set(m[1], m[2]);
-				project.symbolToAlias.set(m[2], m[3]);
+				project.symbolToAlias.set(m[2], m[1]);
 			}
 		}
 	}
