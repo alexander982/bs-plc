@@ -16,7 +16,13 @@ export function activate(context: vscode.ExtensionContext) {
 		hasAliases: false
 	};
 	console.log('searching for project file');
-	readProjectFile().then(() => console.log(`check global var prjFiles: ${project.files}`));
+	readProjectFile()
+		.then(parseDocuments)
+		.then(()=> {
+			if (crPanel) {
+				crPanel.webview.postMessage(getMOPs());
+			}
+		});
 	// Use the console to output diagnostic information (console.log) and errors (console.error)
 	console.log('Congratulations, your extension "bs-plc" is now active!');
 
@@ -44,21 +50,10 @@ export function activate(context: vscode.ExtensionContext) {
 			);
 		}
 		crPanel.webview.html = getWebviewContent(crPanel.webview, context.extensionUri);
-		plc = vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document : undefined;
-		if (plc) {
-			let plcData = parseDocument(plc);
-			plcData.then(function(result){
-				console.log("result ", result);
-				if (crPanel) {
-					console.log('post message');
-					crPanel.webview.postMessage(result);
-				}
-				return null;
-			});
-		}
-		// crPanel.webview.postMessage({});
 
-		vscode.window.showInformationMessage('There is no cross reference yet');
+		if (project.mops) {
+			crPanel.webview.postMessage(getMOPs());
+		}
 
 		crPanel.onDidDispose(() => {
 			crPanel = undefined;
@@ -87,6 +82,53 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(dsp);
 	context.subscriptions.push(ce);
 	context.subscriptions.push(hp);
+}
+
+function getMOPs(): BSSymbolsInfo {
+	return {
+		timers: mergeTimers(),
+		counters: mergeCounters(),
+		pulses: mergePulses()
+	};
+}
+
+function mergeTimers() {
+	if (project.mops && project.mops.keys.length > 0) {
+		let t = new Array<number>();
+		for (let val of project.mops.values()) {
+			if (val.timers) {
+				t = t.concat(val.timers);
+			}
+		}
+		return t;
+	}
+	return [];
+}
+
+function mergeCounters() {
+	if (project.mops && project.mops.keys.length > 0) {
+		let t = new Array<number>();
+		for (let val of project.mops.values()) {
+			if (val.counters) {
+				t = t.concat(val.counters);
+			}
+		}
+		return t;
+	}
+	return [];
+}
+
+function mergePulses() {
+	if (project.mops && project.mops.keys.length > 0) {
+		let t = new Array<number>();
+		for (let val of project.mops.values()) {
+			if (val.pulses) {
+				t = t.concat(val.pulses);
+			}
+		}
+		return t;
+	}
+	return [];
 }
 
 type BSSymbolsInfo = {
