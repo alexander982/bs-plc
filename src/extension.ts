@@ -160,11 +160,16 @@ async function readProjectFile() {
 
 function parseComment(line: string) {
 	let s = line.match( /^;\s*(T\d{1,3}|C\d{1,2}|P\d{1,2}|[IUW]\d{1,3}[AKNT]\d{1,2}|[!][a-zA-Z0-9@#.'?]+).*-(.+)/ );
+	if (!project.hoverMap) {project.hoverMap = new Map<string, string>();}
 	if (s && !s[1].startsWith('!')) {
 		console.log(s[1], '-', s[2]);
-		if (!project.hoverMap) {project.hoverMap = new Map<string, string>();}
 		project.hoverMap.set(s[1], s[2]);
-	};
+	} else if (s && s[1].startsWith('!') && project.hasAliases && project.aliasToSymbol) {
+		let a = project.aliasToSymbol.get(s[1]);
+		if (a) {
+			project.hoverMap.set(a, s[2]);
+		}
+	}
 }
 
 async function parseDocument(doc:vscode.TextDocument | string) {
@@ -337,11 +342,32 @@ class BSHoverProvider implements vscode.HoverProvider {
 				let t = getToken(line.text, position.character);
 				let description = '';
 				if (project.hoverMap){
-					let d = project.hoverMap.get(t);
-					if (d) { description = ` - ${d}`;}
+					if (t.startsWith('!') && project.hasAliases && project.aliasToSymbol) {
+						// aliases
+						t = t.substring(1);
+						let s = project.aliasToSymbol.get(t);
+						if (s) {
+							let d = project.hoverMap.get(s);
+							description =  d ? `${s} (${t}) - ${d}` : `${s} (${t})`;
+						} else {
+							description = `${t}`;
+						}
+					} else if (project.hasAliases && project.symbolToAlias) {
+						// add alias to description
+						let a = project.symbolToAlias.get(t);
+						let d = project.hoverMap.get(t);
+						if (a) {
+							description = d ? `${t} (${a}) - ${d}` : `${t} (${a})`;
+						} else {
+							description = d ? `${t} - ${d}` : `${t}`;
+						}
+					} else {
+						let d = project.hoverMap.get(t);
+						description = d ? `${t} - ${d}` : `${t}`;
+					}
 				}
 				resolve(new vscode.Hover(
-					new vscode.MarkdownString(`${t}${description}`)
+					new vscode.MarkdownString(description)
 				));
 			}
 		});
