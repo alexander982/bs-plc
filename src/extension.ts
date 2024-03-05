@@ -53,6 +53,12 @@ export function activate(context: vscode.ExtensionContext) {
 
 		if (project.mops) {
 			crPanel.webview.postMessage(getMOPs());
+		} else {
+			// single file mode
+			plc = vscode.window.activeTextEditor?.document;
+			if (plc) {
+				parseDocument(plc).then((mops) => crPanel?.webview.postMessage(mops));
+			}
 		}
 
 		crPanel.onDidDispose(() => {
@@ -67,7 +73,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	// on document save
 	let ce = vscode.workspace.onDidSaveTextDocument((doc) => {
-		if (doc && plc && doc.fileName === plc.fileName) {
+		if (plc && doc.fileName === plc.fileName) {
 			let plcData = parseDocument(doc);
 			plcData.then(function (result) {
 				if (crPanel) {
@@ -75,6 +81,8 @@ export function activate(context: vscode.ExtensionContext) {
 				}
 				return null;
 			});
+		} else if (project.mops) {
+			parseDocuments().then(() => crPanel?.webview.postMessage(getMOPs()));
 		}
 	});
 
