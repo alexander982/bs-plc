@@ -315,7 +315,12 @@ function getToken(line: string, position: number) {
 			end = j + 1;
 		}
 	}
-	return line.substring(start, end);
+	let token = line.substring(start, end);
+	// truncate metaoperand function suffix
+	if (token.startsWith('T') || token.startsWith('C')) {
+		token = token.substring(0, token.length - 1);
+	}
+	return token;
 }
 
 class BSHoverProvider implements vscode.HoverProvider {
