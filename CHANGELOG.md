@@ -2,9 +2,12 @@
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
-## [Unreleased]
+## [0.2.0]
 
--
+### Added
+- Hover info 
+- Project file support
+- Aliase file support
 
 ## [0.1.0]
 
