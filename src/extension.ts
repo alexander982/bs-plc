@@ -167,7 +167,7 @@ async function readProjectFile() {
 }
 
 function parseComment(line: string) {
-	let s = line.match( /^;\s*(T\d{1,3}|C\d{1,2}|P\d{1,2}|[IUW]\d{1,3}[AKNT]\d{1,2}|[!][a-zA-Z0-9@#.'?]+).*-(.+)/ );
+	let s = line.match( /^;\s*(T\d{1,3}|C\d{1,2}|P\d{1,2}|[IUW]\d{1,3}[AKNT]\d{1,2}|[!][a-zA-Z0-9@#.'?]+).*?-(.+)/ );
 	if (!project.hoverMap) {project.hoverMap = new Map<string, string>();}
 	if (s && !s[1].startsWith('!')) {
 		console.log(s[1], '-', s[2]);
