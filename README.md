@@ -19,22 +19,51 @@ This will activate following features
 
 * Syntax highlighting
 * Document outline
+* Multiple PLC program files
+* Alias file
+* Hover info
+* Meta operands usage info
+
+### Document outline 
 
 Document outline currently show sections of document. To make such section add `;*** ` before section name and it will
 appear at outline.
 
-From opened PLC source code file it is possible to show used timers, counters and pulses operands. Open command palette
-with `Ctrl+Shift+P` and search for `BS PLC: Show Used Meta Operands`. This will open webview with usage information. Currently
-parsed only one active file.
+### Project file
+
+To support multiple files, they must be listed in the project file `bsplc.json`. 
+```json
+{
+  "files": ["file1", "file2", "file3"]
+}
+```
+
+### Symbol file (alias file)
+
+If alias file exists in PLC project it must be first in the project files list.
+
+### Hover info
+
+Docstring for hover info parsed from comments in PLC files. Comments must be formatted as follows:
+```lisp
+; <symbol or alias> - symbol comments
+```
+For example:
+```lisp
+; I0A5 - axis X hardware limit switch +
+```
+If project contains alias file it is enough to supply such a comment 
+for either symbol or alias one time.
+
+### Meta Operands usage info
+
+To show metaoperands usage info open command palette
+with `Ctrl+Shift+P` and search for `BS PLC: Show Used Meta Operands`. This will open webview with usage information.
 
 ## Planing features
 
 * cross references view
-  * used/unused timers, counters and other signals.
   * show where signals is used.
-* hover info on symbols from specially formatted comments.
-* project file and view to configure PLC environment when dealing with multiple plc program files. Automatically activate
-  the extension when project file exists.
 * symbol file support
   * code suggestion for replacing signal to existing symbols
   * create symbol from signal

@@ -1,15 +1,36 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+import { BSProject } from './project';
 
-var prjFiles: Array<String>;
+const DELIMITERS = [' ', '=', '/', '(', ')', '[', ']', '+', '-', '*', '&', '<', '>', '"', ',', ':'];
+
+var project: BSProject;
 
 // This method is called when your extension is activated
 export function activate(context: vscode.ExtensionContext) {
 	let crPanel: vscode.WebviewPanel | undefined = undefined;
 	let plc: vscode.TextDocument | undefined = undefined;
+	project = {
+		hasProjectFile: false,
+		hasAliases: false
+	};
+	console.log('searching for project file');
+	readProjectFile()
+		.then(parseDocuments)
+		.then(()=> {
+			if (crPanel) {
+				crPanel.webview.postMessage(getMOPs());
+			}
+		});
 	// Use the console to output diagnostic information (console.log) and errors (console.error)
 	console.log('Congratulations, your extension "bs-plc" is now active!');
+
+	let folders =vscode.workspace.workspaceFolders;
+	if (folders) {
+		// FIXME: if is there more than one folder?
+		project.folder = folders[0].uri;
+	}
 
 	// The command has been defined in the package.json file
 	let scrCmd = vscode.commands.registerCommand('bs-plc.showUsed', () => {
@@ -29,19 +50,16 @@ export function activate(context: vscode.ExtensionContext) {
 			);
 		}
 		crPanel.webview.html = getWebviewContent(crPanel.webview, context.extensionUri);
-		plc = vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document : undefined;
-		let plcData = parseDocument(plc);
-		plcData.then(function(result){
-			console.log("result ", result);
-			if (crPanel) {
-				console.log('post message');
-				crPanel.webview.postMessage(result);
-			}
-			return null;
-		});
-		// crPanel.webview.postMessage({});
 
-		vscode.window.showInformationMessage('There is no cross reference yet');
+		if (project.mops) {
+			crPanel.webview.postMessage(getMOPs());
+		} else {
+			// single file mode
+			plc = vscode.window.activeTextEditor?.document;
+			if (plc) {
+				parseDocument(plc).then((mops) => crPanel?.webview.postMessage(mops));
+			}
+		}
 
 		crPanel.onDidDispose(() => {
 			crPanel = undefined;
@@ -49,14 +67,13 @@ export function activate(context: vscode.ExtensionContext) {
 	});
 	console.log("register symbol provider");
 	let dsp = vscode.languages.registerDocumentSymbolProvider({ language: "bsplc" }, new BSDocumentSymbolProvider());
-
-	console.log('searching for project file');
-	readProjectFile();
-	setTimeout(() => {console.log(`check global var prjFiles: ${prjFiles}`);},2000);
 	
+	console.log('register hover provider');
+	let hp = vscode.languages.registerHoverProvider({language: 'bsplc'}, new BSHoverProvider());
+
 	// on document save
 	let ce = vscode.workspace.onDidSaveTextDocument((doc) => {
-		if (doc && plc && doc.fileName === plc.fileName) {
+		if (plc && doc.fileName === plc.fileName) {
 			let plcData = parseDocument(doc);
 			plcData.then(function (result) {
 				if (crPanel) {
@@ -64,12 +81,62 @@ export function activate(context: vscode.ExtensionContext) {
 				}
 				return null;
 			});
+		} else if (project.mops) {
+			parseDocuments().then(() => crPanel?.webview.postMessage(getMOPs()));
 		}
 	});
 
 	context.subscriptions.push(scrCmd);
 	context.subscriptions.push(dsp);
 	context.subscriptions.push(ce);
+	context.subscriptions.push(hp);
+}
+
+function getMOPs(): BSSymbolsInfo {
+	return {
+		timers: mergeTimers(),
+		counters: mergeCounters(),
+		pulses: mergePulses()
+	};
+}
+
+function mergeTimers() {
+	if (project.mops && project.mops.size > 0) {
+		let t = new Array<number>();
+		for (let val of project.mops.values()) {
+			if (val.timers) {
+				t = t.concat(val.timers);
+			}
+		}
+		return t;
+	}
+	return [];
+}
+
+function mergeCounters() {
+	if (project.mops && project.mops.size > 0) {
+		let c = new Array<number>();
+		for (let val of project.mops.values()) {
+			if (val.counters) {
+				c = c.concat(val.counters);
+			}
+		}
+		return c;
+	}
+	return [];
+}
+
+function mergePulses() {
+	if (project.mops && project.mops.size > 0) {
+		let p = new Array<number>();
+		for (let val of project.mops.values()) {
+			if (val.pulses) {
+				p = p.concat(val.pulses);
+			}
+		}
+		return p;
+	}
+	return [];
 }
 
 type BSSymbolsInfo = {
@@ -79,38 +146,64 @@ type BSSymbolsInfo = {
 	signals?:Array<string>
 };
 
-function readProjectFile() {
-	vscode.workspace.findFiles('bsplc.json').then((files) => {
-		if (files.length > 0) {
-			console.log(`project file: ${files}`);
-			let file = vscode.workspace.fs.readFile(files[0]);
-			file.then((data) => {
-				const buf = Buffer.from(data);
-				const prj = JSON.parse(buf.toString());
-				if (prj.files) {
-					console.log(`project files: ${prj.files}`);
-					prjFiles = prj.files;
-				}
-			});
+async function readProjectFile() {
+	let files = await vscode.workspace.findFiles('bsplc.json');
+	if (!(files.length > 0)) {
+		vscode.window.showInformationMessage('Project file now found. Single file mode');
+		return;
+	}
+	let file = await vscode.workspace.fs.readFile(files[0]);
+	const buf = Buffer.from(file);
+	let prj: {files: Array<string>};
+	try {
+		prj = JSON.parse(buf.toString());
+		if (prj.files) {
+			project.files = prj.files;
+			project.hasProjectFile = true;
 		}
-	});
+	} catch (error) {
+		console.error(error);
+	}
 }
 
-async function parseDocument(doc:vscode.TextDocument | undefined) {
-	if (!doc) {return undefined;}
+function parseComment(line: string) {
+	let s = line.match( /^;\s*(T\d{1,3}|C\d{1,2}|P\d{1,2}|[IUW]\d{1,3}[AKNT]\d{1,2}|[!][a-zA-Z0-9@#.'?]+).*?-(.+)/ );
+	if (!project.hoverMap) {project.hoverMap = new Map<string, string>();}
+	if (s && !s[1].startsWith('!')) {
+		console.log(s[1], '-', s[2]);
+		project.hoverMap.set(s[1], s[2]);
+	} else if (s && s[1].startsWith('!') && project.hasAliases && project.aliasToSymbol) {
+		let a = project.aliasToSymbol.get(s[1]);
+		if (a) {
+			project.hoverMap.set(a, s[2]);
+		}
+	}
+}
+
+async function parseDocument(doc:vscode.TextDocument | string) {
+	let lines: Array<string>;
+	let reg = /\r?\n/;
+	if (typeof doc === 'string') {
+		lines = doc.split(reg);
+	} else {
+		lines = doc.getText().split(reg);
+	}
 	let result: BSSymbolsInfo = {};
-	for (let i = 0; i < doc.lineCount; i++){
-		let line = doc.lineAt(i);
-		//skip comments
-		if (line.text.trim().startsWith(";")) {continue;}
+	for (let i = 0; i < lines.length; i++){
+		let line = lines[i].trim();
+		
+		if (line.startsWith(";")) {
+			parseComment(line);
+			continue;
+		}
 		let m: RegExpMatchArray | null;
-		switch (line.text.charAt(0).toUpperCase()) {
+		switch (line.charAt(0).toUpperCase()) {
 			case 'C':
 				// Counters
 				if (!result.counters) {result.counters = [];}
 				let c = 0;
 				// result.counters.push();
-				m = line.text.trim().match(/^C(\d{1,2})I/);
+				m = line.match(/^C(\d{1,2})I/);
 				if (m) {
 					c = Number.parseInt(m[1]);
 					// console.log("counter ", c , m.input? m.input: "");
@@ -121,7 +214,7 @@ async function parseDocument(doc:vscode.TextDocument | undefined) {
 				// Timers
 				if (!result.timers) {result.timers = [];}
 				let t = 0;
-				m = line.text.trim().match(/^T(\d{1,2})I/);
+				m = line.match(/^T(\d{1,3})I/);
 				if (m) {
 					t = Number.parseInt(m[1]);
 					// console.log("timer ", t , m.input? m.input: "");
@@ -132,7 +225,7 @@ async function parseDocument(doc:vscode.TextDocument | undefined) {
 				// Pulses
 				if (!result.pulses) {result.pulses = [];}
 				let p =0;
-				m = line.text.trim().match(/^P(\d{1,2})/);
+				m = line.match(/^P(\d{1,2})/);
 				if (m) {
 					p = Number.parseInt(m[1]);
 					// console.log("pulse ", p , m.input? m.input: "");
@@ -144,6 +237,50 @@ async function parseDocument(doc:vscode.TextDocument | undefined) {
 		}
 	}
 	return result;
+}
+
+function parseAliases(lines: Array<string>) {
+	if (!project.aliasToSymbol) { project.aliasToSymbol = new Map<string, string>(); }
+	if (!project.symbolToAlias) { project.symbolToAlias = new Map<string, string>(); }
+	project.aliasToSymbol.clear();
+	project.symbolToAlias.clear();
+	for (let line of lines) {
+		if (line.startsWith('*')) {continue;}
+		let l = line.trim();
+		if (l.length > 0) {
+			let m = l.match(/\s*([a-zA-Z0-9@#.'?]+)\s*=(.*)\s*/);
+			if (m) {
+				console.log(m[1], m[2]);
+				project.aliasToSymbol.set(m[1], m[2]);
+				project.symbolToAlias.set(m[2], m[1]);
+			}
+		}
+	}
+}
+
+async function parseDocuments() {
+	if (project.hasProjectFile && project.files && project.folder) {
+		for (let i = 0; i < project.files.length; i++) {
+			let uri = vscode.Uri.joinPath(project.folder, project.files[i]);
+			// check first file for aliases
+			let data = await vscode.workspace.fs.readFile(uri);
+
+			let td = new TextDecoder('cp866');
+			let text = td.decode(Buffer.from(data));
+			if (i === 0 && text.charAt(0) === '*') {
+				console.log('aliases file found');
+				project.hasAliases = true;
+				parseAliases(text.split(/\r?\n/));
+			} else {
+				if (!project.mops) { project.mops = new Map(); }
+				project.mops.set(uri.path, await parseDocument(text));
+			}
+		}
+	} else if (vscode.window.activeTextEditor) {
+		let doc = vscode.window.activeTextEditor.document;
+		if (!project.mops) { project.mops = new Map(); }
+		project.mops.set(doc.uri.path , await parseDocument(doc.getText()));
+	}
 }
 
 class BSDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
@@ -169,6 +306,77 @@ class BSDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
 				rejects("cancelled");
 			} else {
 				resolve(symbols);
+			}
+		});
+	}
+}
+
+function getToken(line: string, position: number) {
+	let start = position;
+	let end = position;
+	for (let i = position; i >= 0; i--) {
+		if (DELIMITERS.includes(line.charAt(i))) {
+			break;
+		} else {
+			start = i;
+		}
+	}
+	for (let j = position; j < line.length; j++) {
+		if (DELIMITERS.includes(line.charAt(j))) {
+			break;
+		} else {
+			end = j + 1;
+		}
+	}
+	let token = line.substring(start, end);
+	// truncate metaoperand function suffix
+	if (token.startsWith('T') || token.startsWith('C')) {
+		token = token.substring(0, token.length - 1);
+	}
+	return token;
+}
+
+class BSHoverProvider implements vscode.HoverProvider {
+	provideHover(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): vscode.ProviderResult<vscode.Hover> {
+		return new Promise((resolve, reject) => {
+			let line = document.lineAt(position.line);
+			if (line.isEmptyOrWhitespace) {
+				resolve(null);
+			} else if (line.text.charAt(line.firstNonWhitespaceCharacterIndex) === ';') {
+				resolve(null);
+			} else if (DELIMITERS.includes(line.text.charAt(position.character))) {
+				resolve(null);
+			} else {
+				let t = getToken(line.text, position.character);
+				let description = '';
+				if (project.hoverMap){
+					if (t.startsWith('!') && project.hasAliases && project.aliasToSymbol) {
+						// aliases
+						t = t.substring(1);
+						let s = project.aliasToSymbol.get(t);
+						if (s) {
+							let d = project.hoverMap.get(s);
+							description =  d ? `${s} (${t}) - ${d}` : `${s} (${t})`;
+						} else {
+							description = `${t}`;
+						}
+					} else if (project.hasAliases && project.symbolToAlias) {
+						// add alias to description
+						let a = project.symbolToAlias.get(t);
+						let d = project.hoverMap.get(t);
+						if (a) {
+							description = d ? `${t} (${a}) - ${d}` : `${t} (${a})`;
+						} else {
+							description = d ? `${t} - ${d}` : `${t}`;
+						}
+					} else {
+						let d = project.hoverMap.get(t);
+						description = d ? `${t} - ${d}` : `${t}`;
+					}
+				}
+				resolve(new vscode.Hover(
+					new vscode.MarkdownString(description)
+				));
 			}
 		});
 	}
