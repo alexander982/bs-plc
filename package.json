@@ -17,6 +17,16 @@
         "command": "bs-plc.showUsed",
         "title": "Show Used Meta Operands",
         "category": "BS PLC"
+      },
+      {
+        "command": "bs-plc.showKPocket",
+        "title": "Show K Pocket Usage",
+        "category": "BS PLC"
+      },
+      {
+        "command": "bs-plc.showNPocket",
+        "title": "Show N Pocket Usage",
+        "category": "BS PLC"
       }
     ],
     "configurationDefaults": {
