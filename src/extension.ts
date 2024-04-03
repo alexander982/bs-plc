@@ -1,7 +1,7 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
-import { BSProject } from './project';
+import { BSProject, BSSignal, BSWord } from './project';
 
 const DELIMITERS = [' ', '=', '/', '(', ')', '[', ']', '+', '-', '*', '&', '<', '>', '"', ',', ':'];
 
@@ -139,11 +139,14 @@ function mergePulses() {
 	return [];
 }
 
-type BSSymbolsInfo = {
+export type BSSymbolsInfo = {
 	counters?: Array<number>,
 	timers?:Array<number>,
 	pulses?:Array<number>,
-	signals?:Array<string>
+	pocketKSymbols?: Array<BSSignal>,
+	pocketKWords?: Array<BSWord>,
+	pocketNSymbols?: Array<BSSignal>,
+	pocketNWords?: Array<BSWord>,
 };
 
 async function readProjectFile() {
@@ -176,6 +179,32 @@ function parseComment(line: string) {
 		let a = project.aliasToSymbol.get(s[1]);
 		if (a) {
 			project.hoverMap.set(a, s[2]);
+		}
+	}
+}
+
+function parsePocketSymbol(m:RegExpMatchArray, result: BSSymbolsInfo) {
+	if (m[2] === 'K') {
+		if (!result.pocketKSymbols) { result.pocketKSymbols = []; }
+		try {
+			result.pocketKSymbols.push({
+				socket: Number.parseInt(m[1]),
+				signal: Number.parseInt(m[3])
+			});
+		} catch (error) {
+			console.error('number parse error ', error);
+			return;
+		}
+	} else if (m[2] === 'N') {
+		if (!result.pocketNSymbols) { result.pocketNSymbols = []; }
+		try {
+			result.pocketNSymbols.push({
+				socket: Number.parseInt(m[1]),
+				signal: Number.parseInt(m[3]),
+			});
+		} catch (error) {
+			console.error('number parse error ', error);
+			return; 
 		}
 	}
 }
@@ -219,6 +248,29 @@ async function parseDocument(doc:vscode.TextDocument | string) {
 					t = Number.parseInt(m[1]);
 					// console.log("timer ", t , m.input? m.input: "");
 					result.timers.push(t);
+				}
+				break;
+			case 'U':
+				// K and N pocket signals
+				m = line.match(/^U(\d{1,3})([NK])(\d{1,2})/);
+				let soc = 0;
+				let signal = 0;
+				if (m) {
+					parsePocketSymbol(m, result);
+				}
+				break;
+			case '!':
+				// process aliases
+				if (!project.hasAliases) { break; }
+				m = line.match(/^![a-zA-Z0-9@#.'?]+/);
+				if (m) {
+					let sym = project.aliasToSymbol?.get(m[1]);
+					if (sym?.startsWith('U')) {
+						let sm = sym.match(/^U(\d{1,3})([NK])(\d{1,2})/);
+						if (sm) {
+							parsePocketSymbol(sm, result);
+						}
+					}
 				}
 				break;
 			case 'P':
