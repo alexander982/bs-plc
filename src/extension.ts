@@ -10,6 +10,7 @@ var project: BSProject;
 // This method is called when your extension is activated
 export function activate(context: vscode.ExtensionContext) {
 	let crPanel: vscode.WebviewPanel | undefined = undefined;
+	let kPocketPanel: vscode.WebviewPanel | undefined = undefined;
 	let plc: vscode.TextDocument | undefined = undefined;
 	project = {
 		hasProjectFile: false,
@@ -65,6 +66,35 @@ export function activate(context: vscode.ExtensionContext) {
 			crPanel = undefined;
 		}, null, context.subscriptions);
 	});
+
+	// view K pocket command
+	let kPocketCmd = vscode.commands.registerCommand('bs-plc.showKPocket', () => {
+		const columnToShowIn = vscode.window.activeTextEditor?.viewColumn;
+		if (kPocketPanel) {
+			kPocketPanel.reveal(columnToShowIn);
+		} else {
+			kPocketPanel = vscode.window.createWebviewPanel(
+				'crossReference',
+				'Used symbols in K pocket',
+				columnToShowIn || vscode.ViewColumn.Two,
+				{
+					enableScripts: true,
+					retainContextWhenHidden: true
+				}
+			);
+			kPocketPanel.webview.html = getPocketWebviewContent(kPocketPanel.webview, context.extensionUri, 'K');
+
+			if (project.mops) {
+				
+			}
+		}
+	});
+
+	// view K pocket command
+	let nPocketCmd = vscode.commands.registerCommand('bs-plc.showNPocket', () => {
+
+	});
+
 	console.log("register symbol provider");
 	let dsp = vscode.languages.registerDocumentSymbolProvider({ language: "bsplc" }, new BSDocumentSymbolProvider());
 	
@@ -87,6 +117,8 @@ export function activate(context: vscode.ExtensionContext) {
 	});
 
 	context.subscriptions.push(scrCmd);
+	context.subscriptions.push(kPocketCmd);
+	context.subscriptions.push(nPocketCmd);
 	context.subscriptions.push(dsp);
 	context.subscriptions.push(ce);
 	context.subscriptions.push(hp);
@@ -465,3 +497,28 @@ function getWebviewContent(webview:vscode.Webview, extensionUri:vscode.Uri): str
 	</html>`;
 }
 
+function getPocketWebviewContent(webview:vscode.Webview, extensionUri: vscode.Uri, pocket:'K'|'N'){
+		// local path to script
+		const scriptPathOnDisk = vscode.Uri.joinPath(extensionUri, 'media', 'pockets.js');
+		const scriptPath = webview.asWebviewUri(scriptPathOnDisk);
+		// local path to style
+		const stylePathOnDisk = vscode.Uri.joinPath(extensionUri, 'media', 'style.css');
+		const stylePath = webview.asWebviewUri(stylePathOnDisk);
+		return `<!DOCTYPE html>
+		<html lang="en">
+		
+		<head>
+			<meta charset="UTF-8">
+			<meta name="viewport" content="width=device-width, initial-scale=1.0">
+			<title>Used ${pocket} pocket signals</title>
+			<link href="${stylePath}" rel="stylesheet">
+		</head>
+		
+		<body>
+			<h1>Used ${pocket} pocket signals</h1>
+			<div id="signals"></div>
+			<script src="${scriptPath}"></script>
+		</body>
+		
+		</html>`;
+}
