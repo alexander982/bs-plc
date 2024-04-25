@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { project } from './extension';
 
 export type BSProject = {
     folder?: vscode.Uri
@@ -21,7 +22,52 @@ export type BSSymbolsInfo = {
 	pocketNWords?: Map<number,Array<number>>;
 };
 
-export function getKPocketSymbols(): any {
+export type BSPocket = {
+    pocket: 'K' | 'N';
+    signals: {[key: number]: Array<number>};
+    words: {[key: number]: Array<number>};
+};
+
+export function getKPocketSymbols(): BSPocket {
     console.log('merge pocket symbols');
-	return null;
+    let signals = new Map<number, Array<number>>();
+    let words = new Map<number, Array<number>>();
+    if (project.mops && project.mops.size > 0) {
+        for (let s of project.mops.values()) {
+            if (s.pocketKSymbols) {
+                for (let kv of s.pocketKSymbols.entries()) {
+                    let old = signals.get(kv[0]);
+                    if (old) {
+                        signals.set(kv[0], old.concat(kv[1]));
+                    } else {
+                        signals.set(kv[0], kv[1]);
+                    }
+                }
+            }
+            if (s.pocketKWords) {
+                for (let kv of s.pocketKWords.entries()) {
+                    let old = words.get(kv[0]);
+                    if (old) {
+                        words.set(kv[0], old.concat(kv[1]));
+                    } else {
+                        words.set(kv[0], kv[1]);
+                    }
+                }
+            }
+        }
+
+    }
+	return {
+        pocket: 'K',
+        signals: mapToObject(signals),
+        words: mapToObject(words)
+    };
+}
+
+function mapToObject(m: Map<number, Array<number>>) {
+    let obj:{[key: number]: Array<number>} = {};
+    for (let [k,v] of m) {
+        obj[k] = v;
+    }
+    return obj;
 }

@@ -7,7 +7,7 @@ import { getKPocketSymbols } from './project';
 
 const DELIMITERS = [' ', '=', '/', '(', ')', '[', ']', '+', '-', '*', '&', '<', '>', '"', ',', ':'];
 
-var project: BSProject;
+export var project: BSProject;
 
 // This method is called when your extension is activated
 export function activate(context: vscode.ExtensionContext) {
