@@ -215,23 +215,34 @@ function parseComment(line: string) {
 
 function parsePocketSymbol(m:RegExpMatchArray, result: BSSymbolsInfo) {
 	if (m[2] === 'K') {
-		if (!result.pocketKSymbols) { result.pocketKSymbols = []; }
+		if (!result.pocketKSymbols) { result.pocketKSymbols = new Map<number,Array<number>>(); }
 		try {
-			result.pocketKSymbols.push({
-				socket: Number.parseInt(m[1]),
-				signal: Number.parseInt(m[3])
-			});
+			let socket = Number.parseInt(m[1]);
+			let signal = Number.parseInt(m[3]);
+			if (result.pocketKSymbols.has(socket)) {
+				result.pocketKSymbols.get(socket)?.push(signal);
+			} else {
+				let ar = new Array<number>();
+				ar.push(signal);
+				result.pocketKSymbols.set(socket, ar);
+			}
+
 		} catch (error) {
 			console.error('number parse error ', error);
 			return;
 		}
 	} else if (m[2] === 'N') {
-		if (!result.pocketNSymbols) { result.pocketNSymbols = []; }
+		if (!result.pocketNSymbols) { result.pocketNSymbols = new Map<number,Array<number>>(); }
 		try {
-			result.pocketNSymbols.push({
-				socket: Number.parseInt(m[1]),
-				signal: Number.parseInt(m[3]),
-			});
+			let socket = Number.parseInt(m[1]);
+			let signal = Number.parseInt(m[3]);
+			if (result.pocketNSymbols.has(socket)) {
+				result.pocketNSymbols.get(socket)?.push(signal);
+			} else {
+				let ar = new Array<number>();
+				ar.push(signal);
+				result.pocketNSymbols.set(socket, ar);
+			}
 		} catch (error) {
 			console.error('number parse error ', error);
 			return; 

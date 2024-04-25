@@ -11,24 +11,14 @@ export type BSProject = {
     hoverMap?: Map<string, string>
 };
 
-export type BSSignal = {
-    socket: number,
-    signal: number,
-};
-
-export type BSWord = {
-    socket: number,
-    group: number,
-};
-
 export type BSSymbolsInfo = {
 	counters?: Array<number>;
 	timers?: Array<number>;
 	pulses?: Array<number>;
-	pocketKSymbols?: Array<BSSignal>;
-	pocketKWords?: Array<BSWord>;
-	pocketNSymbols?: Array<BSSignal>;
-	pocketNWords?: Array<BSWord>;
+	pocketKSymbols?: Map<number,Array<number>>;
+	pocketKWords?: Map<number,Array<number>>;
+	pocketNSymbols?: Map<number,Array<number>>;
+	pocketNWords?: Map<number,Array<number>>;
 };
 
 export function getKPocketSymbols(): any {
