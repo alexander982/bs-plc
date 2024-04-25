@@ -3,6 +3,7 @@
 import * as vscode from 'vscode';
 import { BSProject } from './project';
 import { BSSymbolsInfo } from './project';
+import { getKPocketSymbols } from './project';
 
 const DELIMITERS = [' ', '=', '/', '(', ')', '[', ']', '+', '-', '*', '&', '<', '>', '"', ',', ':'];
 
@@ -86,8 +87,14 @@ export function activate(context: vscode.ExtensionContext) {
 			kPocketPanel.webview.html = getPocketWebviewContent(kPocketPanel.webview, context.extensionUri, 'K');
 
 			if (project.mops) {
-				
+				kPocketPanel.webview.postMessage(getKPocketSymbols());
+			} else {
+				// TODO: single file mode
 			}
+
+			kPocketPanel.onDidDispose(() => {
+				kPocketPanel = undefined;
+			}, null, context.subscriptions);
 		}
 	});
 

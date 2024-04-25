@@ -30,3 +30,8 @@ export type BSSymbolsInfo = {
 	pocketNSymbols?: Array<BSSignal>;
 	pocketNWords?: Array<BSWord>;
 };
+
+export function getKPocketSymbols(): any {
+    console.log('merge pocket symbols');
+	return null;
+}
