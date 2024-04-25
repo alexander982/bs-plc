@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-import { BSSymbolsInfo } from './extension';
 
 export type BSProject = {
     folder?: vscode.Uri
@@ -20,4 +19,14 @@ export type BSSignal = {
 export type BSWord = {
     socket: number,
     group: number,
+};
+
+export type BSSymbolsInfo = {
+	counters?: Array<number>;
+	timers?: Array<number>;
+	pulses?: Array<number>;
+	pocketKSymbols?: Array<BSSignal>;
+	pocketKWords?: Array<BSWord>;
+	pocketNSymbols?: Array<BSSignal>;
+	pocketNWords?: Array<BSWord>;
 };

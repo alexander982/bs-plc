@@ -1,7 +1,8 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
-import { BSProject, BSSignal, BSWord } from './project';
+import { BSProject } from './project';
+import { BSSymbolsInfo } from './project';
 
 const DELIMITERS = [' ', '=', '/', '(', ')', '[', ']', '+', '-', '*', '&', '<', '>', '"', ',', ':'];
 
@@ -170,16 +171,6 @@ function mergePulses() {
 	}
 	return [];
 }
-
-export type BSSymbolsInfo = {
-	counters?: Array<number>,
-	timers?:Array<number>,
-	pulses?:Array<number>,
-	pocketKSymbols?: Array<BSSignal>,
-	pocketKWords?: Array<BSWord>,
-	pocketNSymbols?: Array<BSSignal>,
-	pocketNWords?: Array<BSWord>,
-};
 
 async function readProjectFile() {
 	let files = await vscode.workspace.findFiles('bsplc.json');
