@@ -64,6 +64,43 @@ export function getKPocketSymbols(): BSPocket {
     };
 }
 
+// TODO: DRY
+export function getNPocketSymbols(): BSPocket {
+    console.log('merge pocket symbols');
+    let signals = new Map<number, Array<number>>();
+    let words = new Map<number, Array<number>>();
+    if (project.mops && project.mops.size > 0) {
+        for (let s of project.mops.values()) {
+            if (s.pocketNSymbols) {
+                for (let kv of s.pocketNSymbols.entries()) {
+                    let old = signals.get(kv[0]);
+                    if (old) {
+                        signals.set(kv[0], old.concat(kv[1]));
+                    } else {
+                        signals.set(kv[0], kv[1]);
+                    }
+                }
+            }
+            if (s.pocketNWords) {
+                for (let kv of s.pocketNWords.entries()) {
+                    let old = words.get(kv[0]);
+                    if (old) {
+                        words.set(kv[0], old.concat(kv[1]));
+                    } else {
+                        words.set(kv[0], kv[1]);
+                    }
+                }
+            }
+        }
+
+    }
+	return {
+        pocket: 'N',
+        signals: mapToObject(signals),
+        words: mapToObject(words)
+    };
+}
+
 function mapToObject(m: Map<number, Array<number>>) {
     let obj:{[key: number]: Array<number>} = {};
     for (let [k,v] of m) {

@@ -1,9 +1,7 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
-import { BSProject } from './project';
-import { BSSymbolsInfo } from './project';
-import { getKPocketSymbols } from './project';
+import { BSProject, BSSymbolsInfo, getKPocketSymbols, getNPocketSymbols } from './project';
 
 const DELIMITERS = [' ', '=', '/', '(', ')', '[', ']', '+', '-', '*', '&', '<', '>', '"', ',', ':'];
 
@@ -13,6 +11,7 @@ export var project: BSProject;
 export function activate(context: vscode.ExtensionContext) {
 	let crPanel: vscode.WebviewPanel | undefined = undefined;
 	let kPocketPanel: vscode.WebviewPanel | undefined = undefined;
+	let nPocketPanel: vscode.WebviewPanel | undefined = undefined;
 	let plc: vscode.TextDocument | undefined = undefined;
 	project = {
 		hasProjectFile: false,
@@ -102,9 +101,38 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 	});
 
+	// TODO: DRY
 	// view K pocket command
 	let nPocketCmd = vscode.commands.registerCommand('bs-plc.showNPocket', () => {
+		const columnToShowIn = vscode.window.activeTextEditor?.viewColumn;
+		if (nPocketPanel) {
+			nPocketPanel.reveal(columnToShowIn);
+		} else {
+			nPocketPanel = vscode.window.createWebviewPanel(
+				'crossReference',
+				'N Pocket',
+				columnToShowIn || vscode.ViewColumn.Two,
+				{
+					enableScripts: true,
+					retainContextWhenHidden: true
+				}
+			);
+			nPocketPanel.webview.html = getPocketWebviewContent(nPocketPanel.webview, context.extensionUri, 'N');
 
+			if (project.mops) {
+				nPocketPanel.webview.postMessage(getNPocketSymbols());
+			} else {
+				// single file mode
+				plc = vscode.window.activeTextEditor?.document;
+				if (plc) {
+					parseDocument(plc).then((mops) => nPocketPanel?.webview.postMessage(getNPocketSymbols()));
+				}
+			}
+
+			nPocketPanel.onDidDispose(() => {
+				nPocketPanel = undefined;
+			}, null, context.subscriptions);
+		}
 	});
 
 	console.log("register symbol provider");
@@ -121,6 +149,7 @@ export function activate(context: vscode.ExtensionContext) {
 				project.mops?.set(doc.uri.path, result);
 				crPanel?.webview.postMessage(result);
 				kPocketPanel?.webview.postMessage(getKPocketSymbols());
+				nPocketPanel?.webview.postMessage(getNPocketSymbols());
 				return null;
 			});
 		} else if (project.mops) {
@@ -563,7 +592,7 @@ function getPocketWebviewContent(webview:vscode.Webview, extensionUri: vscode.Ur
 		<head>
 			<meta charset="UTF-8">
 			<meta name="viewport" content="width=device-width, initial-scale=1.0">
-			<title>Used ${pocket} pocket signals</title>
+			<title>${pocket} pocket</title>
 			<link href="${stylePath}" rel="stylesheet">
 		</head>
 		
