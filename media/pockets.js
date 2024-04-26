@@ -11,7 +11,9 @@ function renderTable(e) {
     if (!signals) { return; }
     // TODO: merge with words
     let sk = keys(signals);
-    for (let p of sk) {
+    let wk = keys(words);
+    let k = sk.concat(wk);
+    for (let p of k) {
         // pocket number
         table += '<tr><th rowspan="4">' + p + '</th>';
         // groups
@@ -21,8 +23,9 @@ function renderTable(e) {
             table += '<th>K' + g + '</th>';
             for (let i = 0; i < 8; i++) {
                 s = g * 8 + i;
-                let x = signals[p].includes(s) ? 'x' : '';
-                table += '<th title=' + s + '>' + x + '</th>';
+                let x = signals[p]?.includes(s) ? 'x' : '';
+                let style = words[p]?.includes(g) ? 'style="background: #1a8fa97a;"' : '';
+                table += '<th title=' + s + ' ' + style + '>' + x + '</th>';
             }
             table += '</tr>';
         }

@@ -250,6 +250,40 @@ function parsePocketSymbol(m:RegExpMatchArray, result: BSSymbolsInfo) {
 	}
 }
 
+function parsePocketWord(m: RegExpMatchArray, result: BSSymbolsInfo) {
+	if (m[2] === 'K') {
+		if (!result.pocketKWords) { result.pocketKWords = new Map<number, Array<number>>(); }
+		try {
+			let socket = Number.parseInt(m[1]);
+			let group = Number.parseInt(m[3]);
+			if (result.pocketKWords.has(socket)) {
+				result.pocketKWords.get(socket)?.push(group);
+			} else {
+				let ar = new Array<number>();
+				ar.push(group);
+				result.pocketKWords.set(socket,ar);
+			}
+		} catch (error) {
+			console.error('number parse error', error);
+		}
+	} else if (m[2] === 'N') {
+		if (!result.pocketNWords) { result.pocketNWords = new Map<number, Array<number>>(); }
+		try {
+			let socket = Number.parseInt(m[1]);
+			let group = Number.parseInt(m[3]);
+			if (result.pocketNWords.has(socket)) {
+				result.pocketNWords.get(socket)?.push(group);
+			} else {
+				let ar = new Array<number>();
+				ar.push(group);
+				result.pocketNWords.set(socket,ar);
+			}
+		} catch (error) {
+			console.error('number parse error', error);
+		}
+	}
+}
+
 async function parseDocument(doc:vscode.TextDocument | string) {
 	let lines: Array<string>;
 	let reg = /\r?\n/;
@@ -323,6 +357,12 @@ async function parseDocument(doc:vscode.TextDocument | string) {
 					p = Number.parseInt(m[1]);
 					// console.log("pulse ", p , m.input? m.input: "");
 					result.pulses.push(p);
+				}
+				break;
+			case 'W':
+				m = line.match(/^W(\d{1,3})([NK])(\d{1})/);
+				if (m) {
+					parsePocketWord(m, result);
 				}
 				break;
 			default:
