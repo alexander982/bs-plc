@@ -76,7 +76,7 @@ export function activate(context: vscode.ExtensionContext) {
 		} else {
 			kPocketPanel = vscode.window.createWebviewPanel(
 				'crossReference',
-				'Used symbols in K pocket',
+				'K Pocket',
 				columnToShowIn || vscode.ViewColumn.Two,
 				{
 					enableScripts: true,
