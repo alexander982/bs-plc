@@ -118,9 +118,8 @@ export function activate(context: vscode.ExtensionContext) {
 		if (plc && doc.fileName === plc.fileName) {
 			let plcData = parseDocument(doc);
 			plcData.then(function (result) {
-				if (crPanel) {
-					crPanel.webview.postMessage(result);
-				}
+				crPanel?.webview.postMessage(result);
+				kPocketPanel?.webview.postMessage(getKPocketSymbols());
 				return null;
 			});
 		} else if (project.mops) {
