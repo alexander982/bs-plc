@@ -206,7 +206,7 @@ function parseComment(line: string) {
 	let s = line.match( /^;\s*(T\d{1,3}|C\d{1,2}|P\d{1,2}|[IUW]\d{1,3}[AKNT]\d{1,2}|[!][a-zA-Z0-9@#.'?]+).*?-(.+)/ );
 	if (!project.hoverMap) {project.hoverMap = new Map<string, string>();}
 	if (s && !s[1].startsWith('!')) {
-		console.log(s[1], '-', s[2]);
+		// console.log(s[1], '-', s[2]);
 		project.hoverMap.set(s[1], s[2]);
 	} else if (s && s[1].startsWith('!') && project.hasAliases && project.aliasToSymbol) {
 		let a = project.aliasToSymbol.get(s[1]);
@@ -386,7 +386,7 @@ function parseAliases(lines: Array<string>) {
 		if (l.length > 0) {
 			let m = l.match(/\s*([a-zA-Z0-9@#.'?]+)\s*=(.*)\s*/);
 			if (m) {
-				console.log(m[1], m[2]);
+				// console.log(m[1], m[2]);
 				project.aliasToSymbol.set(m[1], m[2]);
 				project.symbolToAlias.set(m[2], m[1]);
 			}
