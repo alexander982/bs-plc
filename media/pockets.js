@@ -12,7 +12,7 @@ function renderTable(e) {
     // TODO: merge with words
     let sk = keys(signals);
     let wk = keys(words);
-    let k = sk.concat(wk);
+    let k = sk.concat(wk).sort((a, b) => a -b);
     for (let p of k) {
         // pocket number
         table += '<tr><th rowspan="4">' + p + '</th>';
@@ -20,7 +20,7 @@ function renderTable(e) {
         for (let g = 0; g < 4; g++) {
             let s = 0; // symbol number
             if (g !== 0) { table += '<tr>'; }
-            table += '<th>K' + g + '</th>';
+            table += '<th>'+ data.pocket + g + '</th>';
             for (let i = 0; i < 8; i++) {
                 s = g * 8 + i;
                 let x = signals[p]?.includes(s) ? 'x' : '';
@@ -44,7 +44,7 @@ function keys(obj) {
             console.error(error);
         }
     }
-    return k.sort((a, b) => a -b);
+    return k;
 }
 
 window.addEventListener('message', renderTable);
