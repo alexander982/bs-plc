@@ -89,7 +89,11 @@ export function activate(context: vscode.ExtensionContext) {
 			if (project.mops) {
 				kPocketPanel.webview.postMessage(getKPocketSymbols());
 			} else {
-				// TODO: single file mode
+				// single file mode
+				plc = vscode.window.activeTextEditor?.document;
+				if (plc) {
+					parseDocument(plc).then((mops) => kPocketPanel?.webview.postMessage(getKPocketSymbols()));
+				}
 			}
 
 			kPocketPanel.onDidDispose(() => {
