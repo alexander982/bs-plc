@@ -115,9 +115,10 @@ export function activate(context: vscode.ExtensionContext) {
 
 	// on document save
 	let ce = vscode.workspace.onDidSaveTextDocument((doc) => {
-		if (plc && doc.fileName === plc.fileName) {
+		if (project.hasProjectFile || (plc && doc.fileName === plc.fileName)) {
 			let plcData = parseDocument(doc);
 			plcData.then(function (result) {
+				project.mops?.set(doc.uri.path, result);
 				crPanel?.webview.postMessage(result);
 				kPocketPanel?.webview.postMessage(getKPocketSymbols());
 				return null;
