@@ -2,6 +2,11 @@
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.3.0]
+
+### Added
+- commands and webviews for pocket signals usage info
+
 ## [0.2.0]
 
 ### Added
