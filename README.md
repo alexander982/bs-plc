@@ -60,6 +60,11 @@ for either symbol or alias one time.
 To show metaoperands usage info open command palette
 with `Ctrl+Shift+P` and search for `BS PLC: Show Used Meta Operands`. This will open webview with usage information.
 
+### K and N pockets signals usage info
+
+To show pocket signals usage info open command palette with `Ctrl+Shift+P` and search for `BS PLC: Show K pocket usage` or
+`BS PLC: Show N pocket usage`. This will open webview with usage information.
+
 ## Planing features
 
 * cross references view
